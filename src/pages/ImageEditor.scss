@@ -1,0 +1,92 @@
+.page-wrapper {
+  padding: 2vw;
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: space-between;
+  gap: 6vw;
+  box-sizing: border-box;
+  height: 100vh;
+}
+
+.image-list {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5vw;
+  flex: 1;
+  .arrow-left,
+  .arrow-right {
+    min-width: 6vw;
+    flex: 1;
+    &.hidden {
+      visibility: hidden;
+    }
+  }
+  .image-preview {
+    align-self: stretch;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    gap: 6vw;
+    .image-wrapper {
+      display: flex;
+      flex-flow: column nowrap;
+      gap: 1.2vw;
+      flex: 1;
+      .image-title {
+        font-size: 6vw;
+        font-weight: bold;
+      }
+      .canvas-wrapper {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      &.hidden {
+        display: none;
+      }
+    }
+  }
+}
+
+.editor-tool {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8vw;
+  .editor-tool-item {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    width: 24vw;
+    gap: 2vw;
+    padding: 2vw;
+    img {
+      height: 8vw;
+    }
+  }
+}
+.editor-decision {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8vw;
+  padding: 2px 2vw;
+  .editor-save-btn,
+  .editor-cancel-btn {
+    padding: 2vw;
+    img {
+      height: 8vw;
+    }
+  }
+  .editor-undo-redo-btn {
+    img {
+      margin: 2vw 20px;
+      height: 5.2vw;
+    }
+  }
+}
