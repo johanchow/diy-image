@@ -4,6 +4,15 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+window.addEventListener('message', function(event) {
+  // 接收来自Uni-app的全局变量
+  const globalVariable = event.data;
+  console.log('receive message from uniapp: ', globalVariable);
+  window.__TRY_ON_CONTEXT__ = {
+    userId: globalVariable.userId,
+  };
+});
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );

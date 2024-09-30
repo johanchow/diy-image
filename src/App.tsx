@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import ImageEditor from './pages/ImageEditor'
 import { requestGenerationDetail } from './helpers/request';
+import { getUrlParam } from './helpers/util';
 import './App.css';
 
-window.__TRY_ON_CONTEXT__ = {
-  generationId: 'ae67oxbu23',
-  userId: 'xxxxxxx'
-};
-const generationId = window.__TRY_ON_CONTEXT__?.generationId;
+// window.__TRY_ON_CONTEXT__ = {
+//   generationId: 'ae67oxbu23',
+//   userId: 'xxxxxxx'
+// };
+const generationId = getUrlParam('generation_id') || '';
 function App() {
   const [generationImageId] = useState<string>(generationId);
   const [generationImageUrl, setGenerationImageurl] = useState<string>('');

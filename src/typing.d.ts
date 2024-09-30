@@ -7,7 +7,6 @@ declare global {
   interface Window {
     __TRY_ON_CONTEXT__: {
       userId: string;
-      generationId: string;
     }
   }
 }
