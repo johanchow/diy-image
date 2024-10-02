@@ -10,6 +10,7 @@ import SureIcon from '../assets/check-solid.svg';
 import CancelIcon from '../assets/xmark-solid.svg';
 import UndoIcon from '../assets/rotate-left-solid.svg';
 import RedoIcon from '../assets/rotate-right-solid.svg';
+import DeleteLeftIcon from '../assets/delete-left-solid.svg';
 import './ImageEditor.scss';
 
 type ImageEditorProps = {
@@ -29,7 +30,7 @@ enum EditorStatus {
   Copy = 'copy',
 };
 
-const fabricPromise = loadJsScript('https://clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/fabric.js');
+const fabricPromise = loadJsScript('//clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/libs/fabric.js');
 function ImageEditor(props: ImageEditorProps) {
   const { generationImageId, sourceImageId, generationImageUrl, sourceImageUrl } = props;
   const [editorStatus, setEditorStatus] = useState<EditorStatus>(EditorStatus.None);
@@ -55,19 +56,22 @@ function ImageEditor(props: ImageEditorProps) {
     console.log('generationImageUrl: ', generationImageUrl);
     console.log('sourceImageUrl: ', sourceImageUrl);
     if (generationImageUrl) {
-      init();
-      window.fabric.Image.fromURL(sourceImageUrl, (image) => {
-        sourceImageRef.current = image;
-        putImageAspectRatioToCanvas(image, sourceCanvasRef.current!)
+      init().then(() => {
+        window.fabric.Image.fromURL(sourceImageUrl, (image) => {
+          sourceImageRef.current = image;
+          putImageAspectRatioToCanvas(image, sourceCanvasRef.current!)
+        });
       });
     }
   }, [generationImageUrl, sourceImageUrl]);
   useEffect(() => {
     // 如果是空，说明是初始化/重置，展示props.generationImageUrl
     const showUrl = generationBlobUrl || generationImageUrl;
-    window.fabric.Image.fromURL(showUrl, (image) => {
-      generationImageRef.current = image;
-      putImageAspectRatioToCanvas(image, generationCanvasRef.current!)
+    init().then(() => {
+      window.fabric.Image.fromURL(showUrl, (image) => {
+        generationImageRef.current = image;
+        putImageAspectRatioToCanvas(image, generationCanvasRef.current!)
+      });
     });
   }, [generationBlobUrl]);
   useEffect(() => {
@@ -116,6 +120,20 @@ function ImageEditor(props: ImageEditorProps) {
   const redoEditing = () => {
     redoGenerationBlobUrl();
   };
+  const goPageBack = () => {
+    console.log('click goPageBack');
+    // 向小程序发送关闭页面的消息
+    window.wx.miniProgram.postMessage({data: {action: 'close'}});
+    window.wx.miniProgram.navigateBack();
+    window.uni.postMessage({
+      data: {
+        action: 'close'
+      }
+    });
+    window.uni.navigateBack({
+      delta: 1
+    });
+  };
   const viewEraseEffect = async (points: Coordinate[], boundingBox: BoundingBox): Promise<boolean> => {
     const newImageBlob = await requestEraseGenerationImage(
       generationImageId, generationImageUrl, points, boundingBox
@@ -155,10 +173,10 @@ function ImageEditor(props: ImageEditorProps) {
   }
   return (
     <div className='page-wrapper'>
+      <div className='page-back'>
+        <img src={DeleteLeftIcon} alt='' onClick={goPageBack} />
+      </div>
       <section className='image-list'>
-        {/* <div onClick={() => swipeImage('left')} className={`arrow-left ${editorStatus !== EditorStatus.Copy ? 'hidden' : ''}`}>
-          <img src={LeftIcon} alt='' />
-        </div> */}
         <div className='image-preview'>
           <div className={`image-wrapper source-image ${editorStatus !== EditorStatus.Copy ? 'hidden' : ''}`}>
             <span className='image-title'>原图</span>
@@ -173,9 +191,6 @@ function ImageEditor(props: ImageEditorProps) {
             </div>
           </div>
         </div>
-        {/* <div onClick={() => swipeImage('right')} className={`arrow-right ${editorStatus !== EditorStatus.Copy ? 'hidden' : ''}`}>
-          <img src={RightIcon} alt='' />
-        </div> */}
       </section>
       {
         editorStatus === EditorStatus.None ?
@@ -244,11 +259,12 @@ const putImageAspectRatioToCanvas = (img: fabric.Image, canvas: fabric.Canvas) =
 const openDrawingMode = (
   canvas: fabric.Canvas,
   image: fabric.Image,
-  viewEraseEffect: (polygonPoints: Coordinate[], boundingBox: BoundingBox) => Promise<boolean>,
+  viewEffect: (polygonPoints: Coordinate[], boundingBox: BoundingBox) => Promise<boolean>,
 ) => {
   canvas.isDrawingMode = true;
   canvas.freeDrawingBrush!.width = 10;  // 设置画笔的宽度
   canvas.freeDrawingBrush!.color = '#777';  // 设置画笔颜色
+  canvas.off('path:created');
   canvas.on('path:created', async (event: any) => {
     // 获取绘制的路径对象
     const path = event.path;
@@ -258,7 +274,7 @@ const openDrawingMode = (
     console.log('coordinates: ', coordinates);
     const imagePoints = convertCanvasToImageCoordinates(extractPolygonPoints(coordinates), image, canvas);
     const boundingBox = calculateBoundingBox(imagePoints);
-    return await viewEraseEffect(imagePoints, boundingBox);
+    return await viewEffect(imagePoints, boundingBox);
   });
 };
 

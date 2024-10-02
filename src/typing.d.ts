@@ -8,6 +8,16 @@ declare global {
     __TRY_ON_CONTEXT__: {
       userId: string;
     }
+    uni: {
+      postMessage: (params: Record<string, any>) => void,
+      navigateBack: (params: Record<string, any>) => void,
+    },
+    wx: {
+      miniProgram: {
+        postMessage: (params: Record<string, any>) => void,
+        navigateBack: () => void;
+      }
+    }
   }
 }
 

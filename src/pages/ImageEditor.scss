@@ -6,6 +6,13 @@
   gap: 6vw;
   box-sizing: border-box;
   height: 100vh;
+  .page-back {
+    position: absolute;
+    min-width: 6vw;
+    padding: 8px;
+    top: 8px;
+    left: 8px;
+  }
 }
 
 .image-list {
@@ -15,14 +22,6 @@
   align-items: center;
   gap: 1.5vw;
   flex: 1;
-  .arrow-left,
-  .arrow-right {
-    min-width: 6vw;
-    flex: 1;
-    &.hidden {
-      visibility: hidden;
-    }
-  }
   .image-preview {
     align-self: stretch;
     display: flex;

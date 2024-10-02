@@ -4,11 +4,11 @@ import { requestGenerationDetail } from './helpers/request';
 import { getUrlParam } from './helpers/util';
 import './App.css';
 
-// window.__TRY_ON_CONTEXT__ = {
-//   generationId: 'ae67oxbu23',
-//   userId: 'xxxxxxx'
-// };
-const generationId = getUrlParam('generation_id') || '';
+window.__TRY_ON_CONTEXT__ = {
+  userId: 'xxxxxxx'
+};
+const generationId = getUrlParam('generation_id') || 'ae67oxbu23';
+// alert(generationId);
 function App() {
   const [generationImageId] = useState<string>(generationId);
   const [generationImageUrl, setGenerationImageurl] = useState<string>('');
