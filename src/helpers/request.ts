@@ -69,24 +69,48 @@ const requestEraseGenerationImage = async (
 };
 
 const requestCopyToGenerationImage = async (
-  generationId: string, generationImageUrl: string, generationCoordinates: Coordinate[], generationBoundingBox: BoundingBox,
-  sourceId: string, sourceImageUrl: string, sourceCoordinates: Coordinate[], sourceBoundingBox: BoundingBox
+  generationImageUrl: string,
+  generationImage: fabric.Image | null,
+  generationCoordinates: Coordinate[],
+  generationBoundingBox: BoundingBox,
+  sourceImageUrl: string,
+  sourceCoordinates: Coordinate[],
+  sourceBoundingBox: BoundingBox
 ): Promise<string> => {
-  const blobImage = await request({
-    url: `${ApiHost}/try-on/copy-to-generation-from-source`,
-    method: 'POST',
-    responseType: 'blob',
-    data: {
-      generation_id: generationId,
-      generation_image_url: generationImageUrl,
-      generation_coordinates: generationCoordinates,
-      generation_bounding_box: generationBoundingBox,
-      source_id: sourceId,
-      source_image_url: sourceImageUrl,
-      source_coordinates: sourceCoordinates,
-      source_bounding_box: sourceBoundingBox,
-    }
-  });
+  let blobImage: Blob;
+  if (generationImage) {
+    const file = convertCanvasImageToFile(generationImage);
+    const formData = new FormData();
+    formData.append('generation_image', file);
+    formData.append('generation_coordinates', JSON.stringify(generationCoordinates));
+    formData.append('generation_bounding_box', JSON.stringify(generationBoundingBox));
+    formData.append('source_image_url', sourceImageUrl);
+    formData.append('source_coordinates', JSON.stringify(sourceCoordinates));
+    formData.append('source_bounding_box', JSON.stringify(sourceBoundingBox));
+    blobImage = await request<Blob>({
+      url: `${ApiHost}/try-on/copy-to-generation-from-source`,
+      method: 'POST',
+      responseType: 'blob',
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      data: formData,
+    });
+  } else {
+    blobImage = await request({
+      url: `${ApiHost}/generation/copy-to-generation-from-source`,
+      method: 'POST',
+      responseType: 'blob',
+      data: {
+        generation_image_url: generationImageUrl,
+        generation_coordinates: generationCoordinates,
+        generation_bounding_box: generationBoundingBox,
+        source_image_url: sourceImageUrl,
+        source_coordinates: sourceCoordinates,
+        source_bounding_box: sourceBoundingBox,
+      }
+    });
+  }
   // 将 Blob 数据转换为可用的 URL
   const blobUrl = URL.createObjectURL(blobImage);
   return blobUrl;

@@ -160,21 +160,24 @@ function ImageEditor(props: ImageEditorProps) {
     }
     const { coordinates: sourceCoordinates, boundingBox: sourceBoundingBox } = selectedSourceImagePolygon.current!;
     const blobUrl = await requestCopyToGenerationImage(
-      generationImageId, generationImageUrl, points, boundingBox,
-      sourceImageId, sourceImageUrl, sourceCoordinates, sourceBoundingBox
+      generationImageUrl,
+      past.length > 0 ? generationImageRef.current! : null,
+      points, boundingBox,
+      sourceImageUrl,
+      sourceCoordinates, sourceBoundingBox
     );
     setGenerationBlobUrl(blobUrl);
     // 清空原图圈选，准备后面继续圈
     clearSourceImage();
     return true;
-  }, []);
+  }, [past]);
   const markSourceImage = async (points: Coordinate[], boundingBox: BoundingBox) => {
     selectedSourceImagePolygon.current = {
       coordinates: points,
       boundingBox,
     };
     return true;
-  }
+  };
   const clearSourceImage = () => {
     selectedSourceImagePolygon.current = undefined;
     clearCanvasPath(sourceCanvasRef.current!);
