@@ -1,16 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import useUndo from 'use-undo';
-import { calculateBoundingBox, extractPolygonPoints, convertCanvasToImageCoordinates, clearCanvasPath } from '../helpers/canvas';
-import { getVwPx, loadJsScript } from '../helpers/util';
-import { requestEraseGenerationImage, requestCopyToGenerationImage, requestSaveGenerationImage } from '../helpers/request';
-import type { BoundingBox, Coordinate } from '../typing';
-import EraserIcon from '../assets/eraser-solid.svg';
-import CopyIcon from '../assets/copy-solid.svg';
-import SureIcon from '../assets/check-solid.svg';
-import CancelIcon from '../assets/xmark-solid.svg';
-import UndoIcon from '../assets/rotate-left-solid.svg';
-import RedoIcon from '../assets/rotate-right-solid.svg';
-import DeleteLeftIcon from '../assets/delete-left-solid.svg';
+import { calculateBoundingBox, extractPolygonPoints, convertCanvasToImageCoordinates, clearCanvasPath, getScale } from '../../helpers/canvas';
+import { getVwPx, loadJsScript } from '../../helpers/util';
+import { requestEraseGenerationImage, requestCopyToGenerationImage, requestSaveGenerationImage } from '../../helpers/request';
+import type { BoundingBox, Coordinate } from '../../typing';
+import EraserIcon from '../../assets/eraser-solid.svg';
+import CopyIcon from '../../assets/copy-solid.svg';
+import SureIcon from '../../assets/check-solid.svg';
+import CancelIcon from '../../assets/xmark-solid.svg';
+import UndoIcon from '../../assets/rotate-left-solid.svg';
+import RedoIcon from '../../assets/rotate-right-solid.svg';
+import DeleteLeftIcon from '../../assets/delete-left-solid.svg';
 import './ImageEditor.scss';
 
 type ImageEditorProps = {
@@ -28,6 +28,11 @@ enum EditorStatus {
   None = 'none',
   Eraser = 'eraser',
   Copy = 'copy',
+};
+enum DrawingMode {
+  GenerationErase = 'generation-erase',
+  SourceMark = 'source-mark',
+  GenerationCopy = 'generation-copy',
 };
 
 const fabricPromise = loadJsScript('//clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/libs/fabric.js');
@@ -59,7 +64,9 @@ function ImageEditor(props: ImageEditorProps) {
       init().then(() => {
         window.fabric.Image.fromURL(sourceImageUrl, (image) => {
           sourceImageRef.current = image;
-          putImageAspectRatioToCanvas(image, sourceCanvasRef.current!)
+          image.clone((imageCloned: fabric.Image) => {
+            putImageAspectRatioToCanvas(imageCloned, sourceCanvasRef.current!)
+          });
         });
       });
     }
@@ -70,7 +77,9 @@ function ImageEditor(props: ImageEditorProps) {
     init().then(() => {
       window.fabric.Image.fromURL(showUrl, (image) => {
         generationImageRef.current = image;
-        putImageAspectRatioToCanvas(image, generationCanvasRef.current!)
+        image.clone((imageCloned: fabric.Image) => {
+          putImageAspectRatioToCanvas(imageCloned, generationCanvasRef.current!)
+        });
       });
     });
   }, [generationBlobUrl]);
@@ -83,7 +92,7 @@ function ImageEditor(props: ImageEditorProps) {
     } else {
       closeDrawingMode(generationCanvasRef.current!);
     }
-  }, [editorStatus]);
+  }, [editorStatus, generationBlobUrl]);
   const init = async () => {
     await fabricPromise;
     console.log('.....init......: ', window.fabric.Canvas);
@@ -134,32 +143,31 @@ function ImageEditor(props: ImageEditorProps) {
       delta: 1
     });
   };
-  const viewEraseEffect = async (points: Coordinate[], boundingBox: BoundingBox): Promise<boolean> => {
-    const newImageBlob = await requestEraseGenerationImage(
-      generationImageId, generationImageUrl, points, boundingBox
+  const viewEraseEffect = useCallback(async (points: Coordinate[], boundingBox: BoundingBox): Promise<boolean> => {
+    console.log('generation state: ', generationBlobUrlState);
+    const blobUrl = await requestEraseGenerationImage(
+      generationImageUrl,
+      past.length > 0 ? generationImageRef.current! : null,
+      points, boundingBox,
     );
-    // 将 Blob 数据转换为可用的 URL
-    const blobUrl = URL.createObjectURL(newImageBlob);
     setGenerationBlobUrl(blobUrl);
     return true;
-  };
-  const viewCopyEffect = async (points: Coordinate[], boundingBox: BoundingBox): Promise<boolean> => {
+  }, [past]);
+  const viewCopyEffect = useCallback(async (points: Coordinate[], boundingBox: BoundingBox): Promise<boolean> => {
     if (!selectedSourceImagePolygon.current) {
       alert('请先在原图中选中复制区域');
       return false;
     }
     const { coordinates: sourceCoordinates, boundingBox: sourceBoundingBox } = selectedSourceImagePolygon.current!;
-    const newImageBlob = await requestCopyToGenerationImage(
+    const blobUrl = await requestCopyToGenerationImage(
       generationImageId, generationImageUrl, points, boundingBox,
       sourceImageId, sourceImageUrl, sourceCoordinates, sourceBoundingBox
     );
-    // 将 Blob 数据转换为可用的 URL
-    const blobUrl = URL.createObjectURL(newImageBlob);
     setGenerationBlobUrl(blobUrl);
     // 清空原图圈选，准备后面继续圈
     clearSourceImage();
     return true;
-  };
+  }, []);
   const markSourceImage = async (points: Coordinate[], boundingBox: BoundingBox) => {
     selectedSourceImagePolygon.current = {
       coordinates: points,
@@ -224,20 +232,21 @@ function ImageEditor(props: ImageEditorProps) {
   );
 }
 
-const putImageAspectRatioToCanvas = (img: fabric.Image, canvas: fabric.Canvas) => {
+const putImageAspectRatioToCanvas = (img: fabric.Image, canvas: fabric.Canvas): number => {
+  const scale = getScale(img, canvas);
   const canvasWidth = canvas.width!;
   const canvasHeight = canvas.height!;
 
-  // 获取图片的原始宽高
-  const imgWidth = img.width!;
-  const imgHeight = img.height!;
+  // // 获取图片的原始宽高
+  // const imgWidth = img.width!;
+  // const imgHeight = img.height!;
 
-  // 计算缩放比例
-  const scaleX = canvasWidth / imgWidth;
-  const scaleY = canvasHeight / imgHeight;
+  // // 计算缩放比例
+  // const scaleX = canvasWidth / imgWidth;
+  // const scaleY = canvasHeight / imgHeight;
 
-  // 选择较小的缩放比例，确保图片完整显示
-  const scale = Math.min(scaleX, scaleY);
+  // // 选择较小的缩放比例，确保图片完整显示
+  // const scale = Math.min(scaleX, scaleY);
 
   // 应用缩放比例
   img.scale(scale);
@@ -254,6 +263,7 @@ const putImageAspectRatioToCanvas = (img: fabric.Image, canvas: fabric.Canvas) =
 
   // 添加图片到 canvas
   canvas.add(img);
+  return scale;
 };
 
 const openDrawingMode = (
@@ -271,7 +281,6 @@ const openDrawingMode = (
     // 获取路径的坐标点
     const pathData = path.path;
     const coordinates: Array<[number, number]> = pathData.map((coord: any) => [coord[1], coord[2]]); // 提取 [x, y] 坐标
-    console.log('coordinates: ', coordinates);
     const imagePoints = convertCanvasToImageCoordinates(extractPolygonPoints(coordinates), image, canvas);
     const boundingBox = calculateBoundingBox(imagePoints);
     return await viewEffect(imagePoints, boundingBox);
@@ -284,4 +293,3 @@ const closeDrawingMode = (canvas: fabric.Canvas) => {
 };
 
 export default ImageEditor;
-

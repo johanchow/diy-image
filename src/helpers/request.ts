@@ -30,26 +30,48 @@ const requestGenerationDetail = async (generationId: string): Promise<Generation
 };
 
 const requestEraseGenerationImage = async (
-  generationId: string, generationImageUrl: string, coordinates: Coordinate[], boundingBox: BoundingBox,
-): Promise<any> => {
-  const blobImage = await request<Generation>({
-    url: `${ApiHost}/try-on/erase-rectangle`,
-    method: 'POST',
-    responseType: 'blob',
-    data: {
-      id: generationId,
-      generation_image_url: generationImageUrl,
-      polygon_coordinates: coordinates,
-      bounding_box: boundingBox,
-    }
-  });
-  return blobImage;
+  generationImageUrl: string,
+  generationImage: fabric.Image | null,
+  coordinates: Coordinate[],
+  boundingBox: BoundingBox,
+): Promise<string> => {
+  let blobImage: Blob;
+  if (generationImage) {
+    const file = convertCanvasImageToFile(generationImage);
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('polygon_coordinates', JSON.stringify(coordinates));
+    formData.append('bounding_box', JSON.stringify(boundingBox));
+    blobImage = await request<Blob>({
+      url: `${ApiHost}/try-on/erase-rectangle`,
+      method: 'POST',
+      responseType: 'blob',
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      data: formData,
+    });
+  } else {
+    blobImage = await request<Blob>({
+      url: `${ApiHost}/generation/erase-polygon`,
+      method: 'POST',
+      responseType: 'blob',
+      data: {
+        generation_image_url: generationImageUrl,
+        polygon_coordinates: coordinates,
+        bounding_box: boundingBox,
+      }
+    })
+  }
+  // 将 Blob 数据转换为可用的 URL
+  const blobUrl = URL.createObjectURL(blobImage);
+  return blobUrl;
 };
 
 const requestCopyToGenerationImage = async (
   generationId: string, generationImageUrl: string, generationCoordinates: Coordinate[], generationBoundingBox: BoundingBox,
   sourceId: string, sourceImageUrl: string, sourceCoordinates: Coordinate[], sourceBoundingBox: BoundingBox
-): Promise<Blob> => {
+): Promise<string> => {
   const blobImage = await request({
     url: `${ApiHost}/try-on/copy-to-generation-from-source`,
     method: 'POST',
@@ -65,7 +87,9 @@ const requestCopyToGenerationImage = async (
       source_bounding_box: sourceBoundingBox,
     }
   });
-  return blobImage;
+  // 将 Blob 数据转换为可用的 URL
+  const blobUrl = URL.createObjectURL(blobImage);
+  return blobUrl;
 };
 
 const requestSaveGenerationImage = async (

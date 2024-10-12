@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import ImageEditor from './pages/ImageEditor'
+import ImageEditor from './pages/ImageEditor/ImageEditor'
 import { requestGenerationDetail } from './helpers/request';
 import { getUrlParam } from './helpers/util';
 import './App.css';

@@ -2,6 +2,25 @@
 import convexHull from 'convex-hull';
 import type { Coordinate, BoundingBox } from "../typing";
 
+// 计算缩放比例
+export const getScale = (img: fabric.Image, canvas: fabric.Canvas): number => {
+  const canvasWidth = canvas.width!;
+  const canvasHeight = canvas.height!;
+
+  // 获取图片的原始宽高
+  const imgWidth = img.width!;
+  const imgHeight = img.height!;
+
+  // 计算缩放比例
+  const scaleX = canvasWidth / imgWidth;
+  const scaleY = canvasHeight / imgHeight;
+
+  // 选择较小的缩放比例，确保图片完整显示
+  const scale = Math.min(scaleX, scaleY);
+
+  return scale;
+}
+
 // 使用算法从很多坐标点提取出外边多边形顶点坐标
 export const extractPolygonPoints = (points: Coordinate[]): Coordinate[] => {
   console.log('coordinates: ', points);
@@ -34,7 +53,9 @@ export const calculateBoundingBox = (points: Coordinate[]): BoundingBox => {
 
 // 方法：将 fabric canvas 坐标转换为图片的原始坐标
 export const convertCanvasToImageCoordinates = (
-  canvasCoordinates: Coordinate[], img: fabric.Image, canvas: fabric.Canvas
+  canvasCoordinates: Coordinate[],
+  img: fabric.Image,
+  canvas: fabric.Canvas,
 ): Coordinate[] => {
   return canvasCoordinates.map((c) => {
     const [ canvasX, canvasY ] = c;
@@ -45,20 +66,23 @@ export const convertCanvasToImageCoordinates = (
     // 获取图片的原始宽高
     const imgWidth = img.width!;
     const imgHeight = img.height!;
+    const scale = getScale(img, canvas);
 
-    // 计算缩放比例
-    const scaleX = canvasWidth / imgWidth;
-    const scaleY = canvasHeight / imgHeight;
+    // // 计算缩放比例
+    // const scaleX = canvasWidth / imgWidth;
+    // const scaleY = canvasHeight / imgHeight;
 
-    // 选择较小的缩放比例，确保图片完整显示
-    const scale = Math.min(scaleX, scaleY);
+    // // 选择较小的缩放比例，确保图片完整显示
+    // const scale = Math.min(scaleX, scaleY);
 
-    // 获取图片在 canvas 上的偏移
-    const leftOffset = (canvasWidth - img.getScaledWidth()) / 2;
-    const topOffset = (canvasHeight - img.getScaledHeight()) / 2;
+    // // 获取图片在 canvas 上的偏移
+    // const leftOffset = (canvasWidth - img.getScaledWidth()) / 2;
+    // const topOffset = (canvasHeight - img.getScaledHeight()) / 2;
+    const leftOffset = (canvasWidth - imgWidth * scale) / 2;
+    const topOffset = (canvasHeight - imgHeight * scale) / 2;
     console.log('convert: ', leftOffset, ', ', topOffset, ', ', scale);
 
-    // 转换 canvas 坐标到图片坐标
+ //    // 转换 canvas 坐标到图片坐标
     const imgX = (canvasX - leftOffset) / scale; // 将 canvasX 减去图片的左边距并除以缩放比例
     const imgY = (canvasY - topOffset) / scale; // 将 canvasY 减去图片的上边距并除以缩放比例
 
