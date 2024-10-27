@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { loadJsScript } from './helpers/util';
+import { WebHost } from './helpers/config';
 
 window.addEventListener('message', function(event) {
   // 接收来自Uni-app的全局变量
@@ -25,8 +26,8 @@ root.render(
 );
 
 setTimeout(() => {
-  loadJsScript('//clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/libs/jweixin-1.4.0.js');
-  loadJsScript('//clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/libs/uni.webview.0.1.52.js');
+  loadJsScript(`//${WebHost}/libs/jweixin-1.4.0.js`);
+  loadJsScript(`//${WebHost}/libs/uni.webview.0.1.52.js`);
 }, 200);
 
 // If you want to start measuring performance in your app, pass a function

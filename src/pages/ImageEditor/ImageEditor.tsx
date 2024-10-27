@@ -3,6 +3,7 @@ import useUndo from 'use-undo';
 import { calculateBoundingBox, extractPolygonPoints, convertCanvasToImageCoordinates, clearCanvasPath, getScale } from '../../helpers/canvas';
 import { getVwPx, loadJsScript } from '../../helpers/util';
 import { requestEraseGenerationImage, requestCopyToGenerationImage, requestSaveGenerationImage } from '../../helpers/request';
+import { WebHost } from '../../helpers/config';
 import type { BoundingBox, Coordinate } from '../../typing';
 import EraserIcon from '../../assets/eraser-solid.svg';
 import CopyIcon from '../../assets/copy-solid.svg';
@@ -35,7 +36,7 @@ enum DrawingMode {
   GenerationCopy = 'generation-copy',
 };
 
-const fabricPromise = loadJsScript('//clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/libs/fabric.js');
+const fabricPromise = loadJsScript(`//${WebHost}/libs/fabric.js`);
 function ImageEditor(props: ImageEditorProps) {
   const { generationImageId, sourceImageId, generationImageUrl, sourceImageUrl } = props;
   const [editorStatus, setEditorStatus] = useState<EditorStatus>(EditorStatus.None);
