@@ -11,6 +11,7 @@ declare global {
     uni: {
       postMessage: (params: Record<string, any>) => void,
       navigateBack: (params: Record<string, any>) => void,
+      reLaunch: (params: {url: string}) => void;
     },
     wx: {
       miniProgram: {

@@ -14,6 +14,7 @@ import RedoIcon from '../../assets/rotate-right-solid.svg';
 import DeleteLeftIcon from '../../assets/delete-left-solid.svg';
 import './ImageEditor.scss';
 import Loading from '../../components/Loading/Loading';
+import { get } from 'http';
 
 type ImageEditorProps = {
   /* 编辑图片id */
@@ -136,19 +137,9 @@ function ImageEditor(props: ImageEditorProps) {
   };
   const goPageBack = () => {
     console.log('click goPageBack');
-    // 向小程序发送关闭页面的消息
-    // window.wx.miniProgram.postMessage({data: {action: 'close'}});
-    // window.wx.miniProgram.navigateBack();
-    window.uni.postMessage({
-      data: {
-        action: 'close'
-      }
-    });
-    // window.close();
-    // @ts-ignore
-    window.uni.closeWebView?.();
-    window.uni.navigateBack({
-      // delta: 1
+    // 关闭webview
+    window.uni.reLaunch({
+      url: '/pages/history/history'
     });
   };
   const viewEraseEffect = useCallback(async (points: Coordinate[], boundingBox: BoundingBox): Promise<boolean> => {

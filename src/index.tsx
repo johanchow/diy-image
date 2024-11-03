@@ -21,7 +21,7 @@ const root = ReactDOM.createRoot(
 );
 setTimeout(async () => {
   await loadJsScript(`//${WebHost}/libs/jweixin-1.4.0.js`);
-  loadJsScript(`//${WebHost}/libs/uni.webview.0.1.52.js`);
+  loadJsScript(`//${WebHost}/libs/uni.webview.1.5.5.js`);
 }, 100);
 root.render(
   <React.StrictMode>
