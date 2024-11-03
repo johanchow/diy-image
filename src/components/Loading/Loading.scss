@@ -1,0 +1,18 @@
+.loading-wrapper {
+  position: fixed;
+  width: 20vw;
+  height: 20vw;
+  left: calc(50% - 10vw);
+  top: calc(50% - 10vw);
+  animation: spin 3s linear infinite;
+}
+
+/* 定义旋转动画 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

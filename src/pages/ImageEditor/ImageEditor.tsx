@@ -13,6 +13,7 @@ import UndoIcon from '../../assets/rotate-left-solid.svg';
 import RedoIcon from '../../assets/rotate-right-solid.svg';
 import DeleteLeftIcon from '../../assets/delete-left-solid.svg';
 import './ImageEditor.scss';
+import Loading from '../../components/Loading/Loading';
 
 type ImageEditorProps = {
   /* 编辑图片id */
@@ -40,6 +41,7 @@ const fabricPromise = loadJsScript(`//${WebHost}/libs/fabric.js`);
 function ImageEditor(props: ImageEditorProps) {
   const { generationImageId, sourceImageId, generationImageUrl, sourceImageUrl } = props;
   const [editorStatus, setEditorStatus] = useState<EditorStatus>(EditorStatus.None);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const sourceCanvasRef = useRef<fabric.Canvas>();
   const generationCanvasRef = useRef<fabric.Canvas>();
   const sourceImageRef = useRef<fabric.Image>();
@@ -117,7 +119,9 @@ function ImageEditor(props: ImageEditorProps) {
     if (!generationImageRef.current) {
       return;
     }
+    setIsLoading(true);
     await requestSaveGenerationImage(generationImageId, generationImageRef.current);
+    setIsLoading(false);
     setEditorStatus(EditorStatus.None);
   };
   const cancelEditing = () => {
@@ -146,11 +150,13 @@ function ImageEditor(props: ImageEditorProps) {
   };
   const viewEraseEffect = useCallback(async (points: Coordinate[], boundingBox: BoundingBox): Promise<boolean> => {
     console.log('generation state: ', generationBlobUrlState);
+    setIsLoading(true);
     const blobUrl = await requestEraseGenerationImage(
       generationImageUrl,
       past.length > 0 ? generationImageRef.current! : null,
       points, boundingBox,
     );
+    setIsLoading(false);
     setGenerationBlobUrl(blobUrl);
     return true;
   }, [past]);
@@ -160,6 +166,7 @@ function ImageEditor(props: ImageEditorProps) {
       return false;
     }
     const { coordinates: sourceCoordinates, boundingBox: sourceBoundingBox } = selectedSourceImagePolygon.current!;
+    setIsLoading(true);
     const blobUrl = await requestCopyToGenerationImage(
       generationImageUrl,
       past.length > 0 ? generationImageRef.current! : null,
@@ -167,6 +174,7 @@ function ImageEditor(props: ImageEditorProps) {
       sourceImageUrl,
       sourceCoordinates, sourceBoundingBox
     );
+    setIsLoading(false);
     setGenerationBlobUrl(blobUrl);
     // 清空原图圈选，准备后面继续圈
     clearSourceImage();
@@ -232,6 +240,7 @@ function ImageEditor(props: ImageEditorProps) {
             </div>
           </section>
       }
+      <Loading isLoading={isLoading} />
       </div>
   );
 }
