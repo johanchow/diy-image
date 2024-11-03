@@ -137,15 +137,18 @@ function ImageEditor(props: ImageEditorProps) {
   const goPageBack = () => {
     console.log('click goPageBack');
     // 向小程序发送关闭页面的消息
-    window.wx.miniProgram.postMessage({data: {action: 'close'}});
-    window.wx.miniProgram.navigateBack();
+    // window.wx.miniProgram.postMessage({data: {action: 'close'}});
+    // window.wx.miniProgram.navigateBack();
     window.uni.postMessage({
       data: {
         action: 'close'
       }
     });
+    // window.close();
+    // @ts-ignore
+    window.uni.closeWebView?.();
     window.uni.navigateBack({
-      delta: 1
+      // delta: 1
     });
   };
   const viewEraseEffect = useCallback(async (points: Coordinate[], boundingBox: BoundingBox): Promise<boolean> => {
@@ -198,14 +201,27 @@ function ImageEditor(props: ImageEditorProps) {
       </div>
       <section className='image-list'>
         <div className='image-preview'>
+          {
+            editorStatus === EditorStatus.Eraser ? (
+              <div className='editor-title-wrapper'>
+                <span className='editor-title'>擦除</span>
+                <span className='editor-desc'>涂画圈选希望清除的区域</span>
+              </div>
+            ) : (editorStatus === EditorStatus.Copy ? (
+              <div className='editor-title-wrapper'>
+                <span className='editor-title'>拷贝</span>
+                <span className='editor-desc'>先从原服装图圈选希望保留区域，再到下面试穿图涂画圈选目标区域</span>
+              </div>
+            ) : <></>)
+          }
           <div className={`image-wrapper source-image ${editorStatus !== EditorStatus.Copy ? 'hidden' : ''}`}>
-            <span className='image-title'>原图</span>
+            <span className='image-title'>原服装图</span>
             <div className='canvas-wrapper'>
               <canvas id="source-canvas"></canvas>
             </div>
           </div>
           <div className='image-wrapper now-image'>
-            <span className='image-title'>生成图</span>
+            <span className='image-title'>试穿图</span>
             <div className='canvas-wrapper'>
               <canvas id="generation-canvas"></canvas>
             </div>

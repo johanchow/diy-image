@@ -19,16 +19,16 @@ window.addEventListener('message', function(event) {
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
+setTimeout(async () => {
+  await loadJsScript(`//${WebHost}/libs/jweixin-1.4.0.js`);
+  loadJsScript(`//${WebHost}/libs/uni.webview.0.1.52.js`);
+}, 100);
 root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
 );
 
-setTimeout(() => {
-  loadJsScript(`//${WebHost}/libs/jweixin-1.4.0.js`);
-  loadJsScript(`//${WebHost}/libs/uni.webview.0.1.52.js`);
-}, 200);
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

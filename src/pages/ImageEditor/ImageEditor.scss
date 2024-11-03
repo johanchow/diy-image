@@ -28,17 +28,30 @@
     flex-flow: column nowrap;
     justify-content: center;
     gap: 6vw;
+    .editor-title-wrapper {
+      display: flex;
+      flex-flow: column nowrap;
+      margin: 0 8.8vw;
+      .editor-title {
+        font-size: 6vw;
+        font-weight: bold;
+      }
+      .editor-desc {
+        font-size: 3.2vw;
+        text-align: left;
+      }
+    }
     .image-wrapper {
       display: flex;
       flex-flow: column nowrap;
       gap: 1.2vw;
       flex: 1;
       .image-title {
-        font-size: 6vw;
-        font-weight: bold;
+        font-size: 5vw;
+        // font-weight: bold;
       }
       .canvas-wrapper {
-        flex: 1;
+        // flex: 1;
         display: flex;
         justify-content: center;
         align-items: center;
