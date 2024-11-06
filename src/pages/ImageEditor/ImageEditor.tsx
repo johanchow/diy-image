@@ -92,6 +92,9 @@ function ImageEditor(props: ImageEditorProps) {
     });
   }, [generationBlobUrl]);
   useEffect(() => {
+    if (editorStatus !== EditorStatus.Eraser) {
+      swiperInstance.current?.slideTo(1);
+    }
     if (editorStatus === EditorStatus.Eraser) {
       openDrawingMode(generationCanvasRef.current!, generationImageRef.current!, viewEraseEffect);
     } else if (editorStatus === EditorStatus.Copy) {
@@ -216,7 +219,7 @@ function ImageEditor(props: ImageEditorProps) {
             slidesPerView={1}
             navigation={editorStatus === EditorStatus.Copy}
             onSwiper={(swiper: SwiperClass) => swiperInstance.current = swiper}
-            onSlideChange={() => console.log('slide change')}
+            allowTouchMove={false}
           >
             <SwiperSlide>
               <div className={`image-wrapper source-image`}>
