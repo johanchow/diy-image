@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ImageEditor from './pages/ImageEditor/ImageEditor'
+import Demo from './pages/Demo/Demo';
 import { requestGenerationDetail } from './helpers/request';
 import { getUrlParam } from './helpers/util';
 import './App.css';
@@ -24,6 +25,7 @@ function App() {
   }, [generationImageId]);
   return (
     <div className="App">
+      {/* <Demo /> */}
       {
         generationImageUrl ?
           <ImageEditor sourceImageId={sourceImageId} sourceImageUrl={sourceImageUrl}

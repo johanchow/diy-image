@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import useUndo from 'use-undo';
+import { Swiper, SwiperClass, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
 import { calculateBoundingBox, extractPolygonPoints, convertCanvasToImageCoordinates, clearCanvasPath, getScale } from '../../helpers/canvas';
 import { getVwPx, loadJsScript } from '../../helpers/util';
 import { requestEraseGenerationImage, requestCopyToGenerationImage, requestSaveGenerationImage } from '../../helpers/request';
 import { WebHost } from '../../helpers/config';
+import Loading from '../../components/Loading/Loading';
 import type { BoundingBox, Coordinate } from '../../typing';
 import EraserIcon from '../../assets/eraser-solid.svg';
 import CopyIcon from '../../assets/copy-solid.svg';
@@ -13,8 +16,8 @@ import UndoIcon from '../../assets/rotate-left-solid.svg';
 import RedoIcon from '../../assets/rotate-right-solid.svg';
 import DeleteLeftIcon from '../../assets/delete-left-solid.svg';
 import './ImageEditor.scss';
-import Loading from '../../components/Loading/Loading';
-import { get } from 'http';
+import 'swiper/scss';
+import 'swiper/scss/navigation';
 
 type ImageEditorProps = {
   /* 编辑图片id */
@@ -51,6 +54,7 @@ function ImageEditor(props: ImageEditorProps) {
     coordinates: Coordinate[];
     boundingBox: BoundingBox;
   }>();
+  const swiperInstance = useRef<SwiperClass>();
   const [
     generationBlobUrlState,
     {
@@ -104,7 +108,7 @@ function ImageEditor(props: ImageEditorProps) {
       sourceCanvasRef.current = new window.fabric.Canvas('source-canvas', {
         width: getVwPx() * 85,
         height: getVwPx() * 85 * 1.3333333,
-        isDrawingMode: true
+        // isDrawingMode: true
       });
       sourceCanvasRef.current.freeDrawingBrush = new window.fabric.PencilBrush(sourceCanvasRef.current);
     }
@@ -205,18 +209,32 @@ function ImageEditor(props: ImageEditorProps) {
               </div>
             ) : <></>)
           }
-          <div className={`image-wrapper source-image ${editorStatus !== EditorStatus.Copy ? 'hidden' : ''}`}>
-            <span className='image-title'>原服装图</span>
-            <div className='canvas-wrapper'>
-              <canvas id="source-canvas"></canvas>
-            </div>
-          </div>
-          <div className='image-wrapper now-image'>
-            <span className='image-title'>试穿图</span>
-            <div className='canvas-wrapper'>
-              <canvas id="generation-canvas"></canvas>
-            </div>
-          </div>
+          <Swiper
+            // install Swiper modules
+            modules={[Navigation]}
+            spaceBetween={10}
+            slidesPerView={1}
+            navigation={editorStatus === EditorStatus.Copy}
+            onSwiper={(swiper: SwiperClass) => swiperInstance.current = swiper}
+            onSlideChange={() => console.log('slide change')}
+          >
+            <SwiperSlide>
+              <div className={`image-wrapper source-image`}>
+                <span className='image-title'>原服装图</span>
+                <div className='canvas-wrapper'>
+                  <canvas id="source-canvas"></canvas>
+                </div>
+              </div>
+            </SwiperSlide>
+            <SwiperSlide>
+              <div className='image-wrapper now-image'>
+                <span className='image-title'>试穿图</span>
+                <div className='canvas-wrapper'>
+                  <canvas id="generation-canvas"></canvas>
+                </div>
+              </div>
+            </SwiperSlide>
+          </Swiper>
         </div>
       </section>
       {
