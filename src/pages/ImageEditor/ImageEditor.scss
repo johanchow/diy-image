@@ -6,7 +6,6 @@
   gap: 6vw;
   box-sizing: border-box;
   height: 100vh;
-  width: calc(100vw - 4vw);
   .page-back {
     position: absolute;
     min-width: 7vw;
@@ -26,6 +25,7 @@
   flex: 1;
   width: 100%;
   .image-preview {
+    position: relative;
     align-self: stretch;
     display: flex;
     flex-flow: column nowrap;
@@ -83,6 +83,18 @@
       .swiper-button-next {
         right: 0;
       }
+    }
+    .enlarge-view {
+      &.hidden {
+        display: none;
+      }
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 30vw;
+      height: 30vw;
+      border-radius: 15vw;
+      z-index: 999;
     }
   }
 }

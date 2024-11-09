@@ -2,10 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import useUndo from 'use-undo';
 import { Swiper, SwiperClass, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
-import { calculateBoundingBox, extractPolygonPoints, convertCanvasToImageCoordinates, clearCanvasPath, getScale } from '../../helpers/canvas';
+import { calculateBoundingBox, extractPolygonPoints, convertCanvasToImageCoordinates, clearCanvasPath, putImageAspectRatioToCanvas, getScale } from '../../helpers/canvas';
+import useImageEditorStore, { ImageEditorState } from '../../store';
 import { getVwPx, loadJsScript } from '../../helpers/util';
 import { requestEraseGenerationImage, requestCopyToGenerationImage, requestSaveGenerationImage } from '../../helpers/request';
 import { WebHost } from '../../helpers/config';
+import EnlargeView from './EnlargeView';
 import Loading from '../../components/Loading/Loading';
 import type { BoundingBox, Coordinate } from '../../typing';
 import EraserIcon from '../../assets/eraser-solid.svg';
@@ -35,10 +37,9 @@ enum EditorStatus {
   Eraser = 'eraser',
   Copy = 'copy',
 };
-enum DrawingMode {
-  GenerationErase = 'generation-erase',
-  SourceMark = 'source-mark',
-  GenerationCopy = 'generation-copy',
+enum CanvasPlace {
+  Source = 'source',
+  Generation = 'generation',
 };
 
 const fabricPromise = loadJsScript(`//${WebHost}/libs/fabric.js`);
@@ -64,6 +65,8 @@ function ImageEditor(props: ImageEditorProps) {
       redo: redoGenerationBlobUrl,
     },
   ] = useUndo<string>('');
+  const updateTouchImage = useImageEditorStore((state: ImageEditorState) => state.updateTouchImage);
+  const updateTouchPoint = useImageEditorStore((state: ImageEditorState) => state.updateTouchPoint);
   const { present: generationBlobUrl, past, future } = generationBlobUrlState;
   useEffect(() => {
     console.log('generationImageUrl: ', generationImageUrl);
@@ -96,10 +99,13 @@ function ImageEditor(props: ImageEditorProps) {
       swiperInstance.current?.slideTo(1);
     }
     if (editorStatus === EditorStatus.Eraser) {
-      openDrawingMode(generationCanvasRef.current!, generationImageRef.current!, viewEraseEffect);
+      openDrawingMode(generationCanvasRef.current!, generationImageRef.current!,
+        viewEraseEffect, (event) => onDrawing(CanvasPlace.Generation, event), onDrawEnd);
     } else if (editorStatus === EditorStatus.Copy) {
-      openDrawingMode(sourceCanvasRef.current!, sourceImageRef.current!, markSourceImage);
-      openDrawingMode(generationCanvasRef.current!, generationImageRef.current!, viewCopyEffect);
+      openDrawingMode(sourceCanvasRef.current!, sourceImageRef.current!,
+        markSourceImage, (event) => onDrawing(CanvasPlace.Source, event), onDrawEnd);
+      openDrawingMode(generationCanvasRef.current!, generationImageRef.current!,
+        viewCopyEffect, (event) => onDrawing(CanvasPlace.Generation, event), onDrawEnd);
     } else {
       closeDrawingMode(generationCanvasRef.current!);
     }
@@ -188,6 +194,23 @@ function ImageEditor(props: ImageEditorProps) {
     };
     return true;
   };
+  const onDrawing = async (place: CanvasPlace, event: any) => {
+    const scale = place === CanvasPlace.Generation
+      ? getScale(generationImageRef.current!, generationCanvasRef.current!)
+      : getScale(sourceImageRef.current!, sourceCanvasRef.current!);
+    const { x: touchX, y: touchY } = event.pointer!;
+    const originalX = touchX / scale;
+    const originalY = touchY / scale;
+    const originalImage = place === CanvasPlace.Generation
+      ? generationImageRef.current
+      : sourceImageRef.current
+    updateTouchImage(originalImage);
+    updateTouchPoint([originalX, originalY]);
+  };
+  const onDrawEnd = async () => {
+    updateTouchImage(undefined);
+    updateTouchPoint(undefined);
+  };
   const clearSourceImage = () => {
     selectedSourceImagePolygon.current = undefined;
     clearCanvasPath(sourceCanvasRef.current!);
@@ -238,6 +261,7 @@ function ImageEditor(props: ImageEditorProps) {
               </div>
             </SwiperSlide>
           </Swiper>
+          <EnlargeView />
         </div>
       </section>
       {
@@ -273,44 +297,12 @@ function ImageEditor(props: ImageEditorProps) {
   );
 }
 
-const putImageAspectRatioToCanvas = (img: fabric.Image, canvas: fabric.Canvas): number => {
-  const scale = getScale(img, canvas);
-  const canvasWidth = canvas.width!;
-  const canvasHeight = canvas.height!;
-
-  // // 获取图片的原始宽高
-  // const imgWidth = img.width!;
-  // const imgHeight = img.height!;
-
-  // // 计算缩放比例
-  // const scaleX = canvasWidth / imgWidth;
-  // const scaleY = canvasHeight / imgHeight;
-
-  // // 选择较小的缩放比例，确保图片完整显示
-  // const scale = Math.min(scaleX, scaleY);
-
-  // 应用缩放比例
-  img.scale(scale);
-
-  // 将图片居中显示在 canvas 上
-  img.set({
-    left: (canvasWidth - img.getScaledWidth()) / 2,
-    top: (canvasHeight - img.getScaledHeight()) / 2,
-    selectable: false,  // 禁止选择和移动
-    hasControls: false, // 禁止控制点（缩放、旋转）
-    hasBorders: false   // 禁止显示边框
-  });
-  console.log('put: ', (canvasWidth - img.getScaledWidth()) / 2, ', ', (canvasHeight - img.getScaledHeight()) / 2, ', ', scale);
-
-  // 添加图片到 canvas
-  canvas.add(img);
-  return scale;
-};
-
 const openDrawingMode = (
   canvas: fabric.Canvas,
   image: fabric.Image,
   viewEffect: (polygonPoints: Coordinate[], boundingBox: BoundingBox) => Promise<boolean>,
+  onPlaceDrawing: (event: any) => void,
+  onPlaceDrawEnd: () => void
 ) => {
   canvas.isDrawingMode = true;
   canvas.freeDrawingBrush!.width = 10;  // 设置画笔的宽度
@@ -325,6 +317,12 @@ const openDrawingMode = (
     const imagePoints = convertCanvasToImageCoordinates(extractPolygonPoints(coordinates), image, canvas);
     const boundingBox = calculateBoundingBox(imagePoints);
     return await viewEffect(imagePoints, boundingBox);
+  });
+  canvas.on('mouse:move', async (event) => {
+    onPlaceDrawing(event);
+  });
+  canvas.on('mouse:up', () => {
+    onPlaceDrawEnd();
   });
 };
 

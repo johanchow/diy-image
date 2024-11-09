@@ -5,6 +5,7 @@
   left: calc(50% - 10vw);
   top: calc(50% - 10vw);
   animation: spin 3s linear infinite;
+  z-index: 999;
 }
 
 /* 定义旋转动画 */

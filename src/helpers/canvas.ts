@@ -21,6 +21,40 @@ export const getScale = (img: fabric.Image, canvas: fabric.Canvas): number => {
   return scale;
 }
 
+export const putImageAspectRatioToCanvas = (img: fabric.Image, canvas: fabric.Canvas): number => {
+  const scale = getScale(img, canvas);
+  const canvasWidth = canvas.width!;
+  const canvasHeight = canvas.height!;
+
+  // // 获取图片的原始宽高
+  // const imgWidth = img.width!;
+  // const imgHeight = img.height!;
+
+  // // 计算缩放比例
+  // const scaleX = canvasWidth / imgWidth;
+  // const scaleY = canvasHeight / imgHeight;
+
+  // // 选择较小的缩放比例，确保图片完整显示
+  // const scale = Math.min(scaleX, scaleY);
+
+  // 应用缩放比例
+  img.scale(scale);
+
+  // 将图片居中显示在 canvas 上
+  img.set({
+    left: (canvasWidth - img.getScaledWidth()) / 2,
+    top: (canvasHeight - img.getScaledHeight()) / 2,
+    selectable: false,  // 禁止选择和移动
+    hasControls: false, // 禁止控制点（缩放、旋转）
+    hasBorders: false   // 禁止显示边框
+  });
+  console.log('put: ', (canvasWidth - img.getScaledWidth()) / 2, ', ', (canvasHeight - img.getScaledHeight()) / 2, ', ', scale);
+
+  // 添加图片到 canvas
+  canvas.add(img);
+  return scale;
+};
+
 // 使用算法从很多坐标点提取出外边多边形顶点坐标
 export const extractPolygonPoints = (points: Coordinate[]): Coordinate[] => {
   console.log('coordinates: ', points);
