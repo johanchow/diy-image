@@ -42,6 +42,7 @@ enum CanvasPlace {
   Generation = 'generation',
 };
 
+const line: Coordinate[] = [];
 const fabricPromise = loadJsScript(`//${WebHost}/libs/fabric.js`);
 function ImageEditor(props: ImageEditorProps) {
   const { generationImageId, sourceImageId, generationImageUrl, sourceImageUrl } = props;
@@ -66,7 +67,7 @@ function ImageEditor(props: ImageEditorProps) {
     },
   ] = useUndo<string>('');
   const updateTouchImage = useImageEditorStore((state: ImageEditorState) => state.updateTouchImage);
-  const updateTouchPoint = useImageEditorStore((state: ImageEditorState) => state.updateTouchPoint);
+  const updateTouchPoints = useImageEditorStore((state: ImageEditorState) => state.updateTouchPoints);
   const { present: generationBlobUrl, past, future } = generationBlobUrlState;
   useEffect(() => {
     console.log('generationImageUrl: ', generationImageUrl);
@@ -100,12 +101,12 @@ function ImageEditor(props: ImageEditorProps) {
     }
     if (editorStatus === EditorStatus.Eraser) {
       openDrawingMode(generationCanvasRef.current!, generationImageRef.current!,
-        viewEraseEffect, (event) => onDrawing(CanvasPlace.Generation, event), onDrawEnd);
+        viewEraseEffect, (event, line: Coordinate[]) => onDrawing(CanvasPlace.Generation, event, line), onDrawEnd);
     } else if (editorStatus === EditorStatus.Copy) {
       openDrawingMode(sourceCanvasRef.current!, sourceImageRef.current!,
-        markSourceImage, (event) => onDrawing(CanvasPlace.Source, event), onDrawEnd);
+        markSourceImage, (event, line: Coordinate[]) => onDrawing(CanvasPlace.Source, event, line), onDrawEnd);
       openDrawingMode(generationCanvasRef.current!, generationImageRef.current!,
-        viewCopyEffect, (event) => onDrawing(CanvasPlace.Generation, event), onDrawEnd);
+        viewCopyEffect, (event, line: Coordinate[]) => onDrawing(CanvasPlace.Generation, event, line), onDrawEnd);
     } else {
       closeDrawingMode(generationCanvasRef.current!);
     }
@@ -194,22 +195,27 @@ function ImageEditor(props: ImageEditorProps) {
     };
     return true;
   };
-  const onDrawing = async (place: CanvasPlace, event: any) => {
-    const scale = place === CanvasPlace.Generation
-      ? getScale(generationImageRef.current!, generationCanvasRef.current!)
-      : getScale(sourceImageRef.current!, sourceCanvasRef.current!);
-    const { x: touchX, y: touchY } = event.pointer!;
-    const originalX = touchX / scale;
-    const originalY = touchY / scale;
+  const onDrawing = async (place: CanvasPlace, event: any, line: Coordinate[]) => {
+    const canvasRef = place === CanvasPlace.Generation
+      ? generationCanvasRef.current!
+      : sourceCanvasRef.current!
     const originalImage = place === CanvasPlace.Generation
       ? generationImageRef.current
       : sourceImageRef.current
+    const scale = canvasRef.getZoom();
+    const { x: touchX, y: touchY } = event.pointer!;
     updateTouchImage(originalImage);
-    updateTouchPoint([originalX, originalY]);
+    updateTouchPoints({
+      current: [touchX / scale, touchY / scale],
+      history: line.map(point => [point[0] / scale, point[1] / scale]),
+    });
   };
   const onDrawEnd = async () => {
     updateTouchImage(undefined);
-    updateTouchPoint(undefined);
+    updateTouchPoints({
+      current: undefined,
+      history: [],
+    });
   };
   const clearSourceImage = () => {
     selectedSourceImagePolygon.current = undefined;
@@ -301,7 +307,7 @@ const openDrawingMode = (
   canvas: fabric.Canvas,
   image: fabric.Image,
   viewEffect: (polygonPoints: Coordinate[], boundingBox: BoundingBox) => Promise<boolean>,
-  onPlaceDrawing: (event: any) => void,
+  onPlaceDrawing: (event: any, line: Coordinate[]) => void,
   onPlaceDrawEnd: () => void
 ) => {
   canvas.isDrawingMode = true;
@@ -313,15 +319,23 @@ const openDrawingMode = (
     const path = event.path;
     // 获取路径的坐标点
     const pathData = path.path;
+    console.log('pathData: ', pathData);
     const coordinates: Array<[number, number]> = pathData.map((coord: any) => [coord[1], coord[2]]); // 提取 [x, y] 坐标
     const imagePoints = convertCanvasToImageCoordinates(extractPolygonPoints(coordinates), image, canvas);
     const boundingBox = calculateBoundingBox(imagePoints);
     return await viewEffect(imagePoints, boundingBox);
   });
+  let line: Coordinate[] = [];
+  canvas.on('mouse:down', (event) => {
+  });
   canvas.on('mouse:move', async (event) => {
-    onPlaceDrawing(event);
+    const { x: touchX, y: touchY } = event.pointer!;
+    // 更新路径数据，将新点追加到路径中
+    line.push([touchX, touchY])
+    onPlaceDrawing(event, line);
   });
   canvas.on('mouse:up', () => {
+    line = [];
     onPlaceDrawEnd();
   });
 };

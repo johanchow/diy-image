@@ -2,17 +2,23 @@ import { create } from 'zustand'
 import { Coordinate } from './typing';
 
 export interface ImageEditorState {
-  touchPoint: Coordinate | undefined;
+  touchPoints: {
+    current: Coordinate | undefined;
+    history: Coordinate[];
+  };
   touchImage: fabric.Image | undefined;
-  updateTouchPoint: (point: Coordinate | undefined) => void;
+  updateTouchPoints: (points: {current: Coordinate | undefined, history: Coordinate[]}) => void;
   updateTouchImage: (image: fabric.Image | undefined) => void;
 }
 
 const useImageEditorStore = create<ImageEditorState>()((set) => ({
-  touchPoint: undefined,
+  touchPoints: {
+    current: undefined,
+    history: [],
+  },
   touchImage: undefined,
   updateTouchImage: (image) => set({ touchImage: image }),
-  updateTouchPoint: (point) => set({ touchPoint: point }),
+  updateTouchPoints: (touchPoints) => set({ touchPoints }),
 }));
 
 export default useImageEditorStore;
