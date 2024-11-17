@@ -1,28 +1,32 @@
 // @ts-ignore
 import convexHull from 'convex-hull';
+import { getVwPx } from './util';
 import type { Coordinate, BoundingBox } from "../typing";
 
 // 计算缩放比例
-export const getScale = (img: fabric.Image, canvas: fabric.Canvas): number => {
-  const canvasWidth = canvas.width!;
-  const canvasHeight = canvas.height!;
+export const getScale = (img: fabric.Image, canvas?: fabric.Canvas) => {
+  const { width: canvasWidth, height: canvasHeight } = canvas || getCanvasSize();
 
   // 获取图片的原始宽高
   const imgWidth = img.width!;
   const imgHeight = img.height!;
 
   // 计算缩放比例
-  const scaleX = canvasWidth / imgWidth;
-  const scaleY = canvasHeight / imgHeight;
+  const scaleX = canvasWidth! / imgWidth;
+  const scaleY = canvasHeight! / imgHeight;
 
   // 选择较小的缩放比例，确保图片完整显示
   const scale = Math.min(scaleX, scaleY);
 
-  return scale;
+  return {
+    offsetX: (canvasWidth! - imgWidth * scale) / 2,
+    offsetY: (canvasHeight! - imgHeight * scale) / 2,
+    scale,
+  };
 }
 
 export const putImageAspectRatioToCanvas = (img: fabric.Image, canvas: fabric.Canvas): number => {
-  const scale = getScale(img, canvas);
+  const { scale } = getScale(img, canvas);
   const canvasWidth = canvas.width!;
   const canvasHeight = canvas.height!;
 
@@ -100,7 +104,7 @@ export const convertCanvasToImageCoordinates = (
     // 获取图片的原始宽高
     const imgWidth = img.width!;
     const imgHeight = img.height!;
-    const scale = getScale(img, canvas);
+    const { scale } = getScale(img, canvas);
 
     // // 计算缩放比例
     // const scaleX = canvasWidth / imgWidth;
@@ -152,5 +156,12 @@ export const convertCanvasImageToFile = (img: fabric.Image) => {
   // 创建 File 对象
   const file = new File([blob], 'image.png', { type: blob.type });
   return file;
+};
+
+export const getCanvasSize = () => {
+  return {
+    width: getVwPx() * 85,
+    height: getVwPx() * 85 * 1.3333333,
+  }
 };
 

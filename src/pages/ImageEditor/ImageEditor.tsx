@@ -2,9 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import useUndo from 'use-undo';
 import { Swiper, SwiperClass, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
-import { calculateBoundingBox, extractPolygonPoints, convertCanvasToImageCoordinates, clearCanvasPath, putImageAspectRatioToCanvas, getScale } from '../../helpers/canvas';
+import { calculateBoundingBox, extractPolygonPoints, getCanvasSize,
+  convertCanvasToImageCoordinates, clearCanvasPath, putImageAspectRatioToCanvas } from '../../helpers/canvas';
 import useImageEditorStore, { ImageEditorState } from '../../store';
-import { getVwPx, loadJsScript } from '../../helpers/util';
+import { loadJsScript } from '../../helpers/util';
 import { requestEraseGenerationImage, requestCopyToGenerationImage, requestSaveGenerationImage } from '../../helpers/request';
 import { WebHost } from '../../helpers/config';
 import EnlargeView from './EnlargeView';
@@ -116,16 +117,14 @@ function ImageEditor(props: ImageEditorProps) {
     console.log('.....init......: ', window.fabric.Canvas);
     if (!sourceCanvasRef.current) {
       sourceCanvasRef.current = new window.fabric.Canvas('source-canvas', {
-        width: getVwPx() * 85,
-        height: getVwPx() * 85 * 1.3333333,
+        ...getCanvasSize(),
         // isDrawingMode: true
       });
       sourceCanvasRef.current.freeDrawingBrush = new window.fabric.PencilBrush(sourceCanvasRef.current);
     }
     if (!generationCanvasRef.current) {
       generationCanvasRef.current = new window.fabric.Canvas('generation-canvas', {
-        width: getVwPx() * 85,
-        height: getVwPx() * 85 * 1.3333333,
+        ...getCanvasSize(),
       });
       generationCanvasRef.current.freeDrawingBrush = new window.fabric.PencilBrush(generationCanvasRef.current);
     }
